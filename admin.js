@@ -199,8 +199,8 @@ function renderAdminSchedule() {
       const done = !!state.schedule.done[key];
       const s = statusFor(done, today, thu, last);
       const name = people[i].name;
-      const description = (state.schedule.descriptions || {})[key] || '';
-      return '<div class="tile' + (done ? ' done' : '') + '"><label class="tile-main"><input type="checkbox" data-key="' + esc(key) + '"' + (done ? ' checked' : '') + '><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span></label><textarea class="tile-note-input" data-desc-key="' + esc(key) + '" rows="2" maxlength="240" placeholder="Add description">' + esc(description) + '</textarea></div>';
+       const hasDescription = !!((state.schedule.descriptions || {})[key] || '');
+       return '<div class="tile' + (done ? ' done' : '') + '"><label class="tile-main"><input type="checkbox" data-key="' + esc(key) + '"' + (done ? ' checked' : '') + '><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span></label><button class="btn desc-btn' + (hasDescription ? ' has-desc' : '') + '" type="button" data-desc-key="' + esc(key) + '" aria-label="Edit description for ' + esc(poster) + '">desc</button></div>';
     }).join('');
     return '<article class="week' + (current ? ' now' : '') + '"><div><div class="day">' + thu.getUTCDate() + '</div><div class="monthday">' + fmt(thu, { weekday: 'long', month: 'short' }) + '</div><div class="latest">Latest: ' + fmt(last, { weekday: 'short', day: 'numeric', month: 'short' }) + '</div></div><div class="tiles">' + tiles + '</div></article>';
   }).join('') || '<div class="empty">No Thursdays in this month.</div>';
@@ -315,22 +315,38 @@ $('adminPrev').addEventListener('click', () => { state.viewMonth = utc(state.vie
 $('adminNext').addEventListener('click', () => { state.viewMonth = utc(state.viewMonth.getUTCFullYear(), state.viewMonth.getUTCMonth() + 1, 1); renderAdminSchedule(); });
 $('adminToday').addEventListener('click', () => { state.viewMonth = utc(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1); renderAdminSchedule(); });
 
+let descKey = '';
+
+$('adminWeeks').addEventListener('click', e => {
+  const button = e.target.closest('[data-desc-key]');
+  if (!button) return;
+  descKey = button.dataset.descKey;
+  $('descWhen').textContent = descKey.replace('|', ' · ');
+  $('descText').value = (state.schedule.descriptions || {})[descKey] || '';
+  setMsg('descMsg', '');
+  $('descDialog').showModal();
+  $('descText').focus();
+});
+
+$('descCancel').addEventListener('click', () => $('descDialog').close());
+
+$('descForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const value = $('descText').value.trim();
+  const button = e.submitter;
+  if (button) button.disabled = true;
+  try {
+    const data = await postJson('/api/schedule', 'description', { key: descKey, value });
+    state.schedule.descriptions = data.descriptions || {};
+    $('descDialog').close();
+    renderAdminSchedule();
+    toast('Description saved.');
+  } catch (err) { setMsg('descMsg', err.message); }
+  finally { if (button) button.disabled = false; }
+});
+
 $('adminWeeks').addEventListener('change', async e => {
-  const target = e.target;
-  if (target.dataset.descKey) {
-    const key = target.dataset.descKey;
-    const value = target.value.trim();
-    const descriptions = state.schedule.descriptions || (state.schedule.descriptions = {});
-    if ((descriptions[key] || '') === value) return;
-    if (value) descriptions[key] = value; else delete descriptions[key];
-    try {
-      const data = await postJson('/api/schedule', 'description', { key, value });
-      state.schedule.descriptions = data.descriptions || {};
-      toast('Description saved.');
-    } catch (err) { toast(err.message); await loadAll(true); }
-    return;
-  }
-  const box = target;
+  const box = e.target;
   if (!box.dataset.key) return;
   const key = box.dataset.key;
   const value = box.checked;

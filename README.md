@@ -13,7 +13,7 @@ A shared graphics workflow app: admins create designer accounts, the weekly post
 - Admin review queue with a live badge, approval, and reviewer notes.
 - Upcoming events managed by admins.
 - Automated Monday assignment reminders and Wednesday final-day/pending-review emails.
-- Warp-inspired UI: warm dark canvas by default, warm light theme toggle, Inter + DM Mono, tight radii, hairline borders.
+- Warp-inspired UI: red, white and black palette with dark and light themes, Inter + DM Mono, tight radii, hairline borders.
 
 ## Installable app
 

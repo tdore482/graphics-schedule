@@ -167,6 +167,20 @@
   </div>
 </div>
 
+<dialog id="descDialog" aria-labelledby="descTitle">
+  <form id="descForm">
+    <p class="eyebrow">Schedule card</p>
+    <h2 id="descTitle">Description</h2>
+    <p class="hint" id="descWhen"></p>
+    <label>Description<textarea class="desc-textarea" id="descText" maxlength="240" rows="4" placeholder="Add a note for this card"></textarea></label>
+    <p class="msg" id="descMsg" role="status" aria-live="polite"></p>
+    <div class="dialog-actions">
+      <button class="btn" type="button" id="descCancel">Cancel</button>
+      <button class="btn primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="adminToast" role="status" aria-live="polite" hidden></div>
 <script src="/admin.js"></script>
 </body>
