@@ -58,15 +58,18 @@ h4{font-size:18px;font-weight:500;margin:0 0 6px}
 .week .monthday{color:var(--ink);font-size:15px;font-weight:500;margin-top:4px}
 .week .latest{color:var(--body);font:13px/20px var(--font-mono);margin-top:12px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.tile{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--hairline);border-radius:var(--radius-md);padding:16px;background:var(--canvas)}
-.tile:hover{border-color:var(--ink)}
-.tile.done{background:var(--soft);border-style:dashed}
-.tile input{margin-top:3px;accent-color:var(--ink);width:20px;height:20px;flex:none}
-.tile b{display:block;font:15px/22px var(--font-mono);letter-spacing:-.02em}
-.tile .who{display:block;color:var(--ink);font-size:15px;font-weight:500;margin-top:4px}
-.tile .who.empty{color:var(--body)}
-.tile small{display:block;color:var(--body);font:13px/20px var(--font-mono);margin-top:6px}
-.tile small.warn,.tile small.bad{color:var(--ink);font-weight:500}
+.tiles .tile:nth-child(3n+1){--tile-bg:#cfe3f7;--tile-border:#7fb3d8;--tile-ink:#1d3245;--tile-muted:#486982}
+.tiles .tile:nth-child(3n+2){--tile-bg:#d2eccf;--tile-border:#8fca9f;--tile-ink:#213d28;--tile-muted:#4d7657}
+.tiles .tile:nth-child(3n){--tile-bg:#f8d2df;--tile-border:#e2a1b7;--tile-ink:#4a2534;--tile-muted:#85566a}
+.tile{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--tile-border,var(--hairline));border-radius:var(--radius-md);padding:16px;background:var(--tile-bg,var(--canvas));color:var(--tile-ink,var(--ink))}
+.tile:hover{border-color:var(--tile-ink,var(--ink))}
+.tile.done{background:var(--tile-bg,var(--soft));border-style:dashed}
+.tile input{margin-top:3px;accent-color:var(--tile-ink,var(--ink));width:20px;height:20px;flex:none}
+.tile b{display:block;font:15px/22px var(--font-mono);letter-spacing:-.02em;color:var(--tile-ink,var(--ink))}
+.tile .who{display:block;color:var(--tile-ink,var(--ink));font-size:15px;font-weight:500;margin-top:4px}
+.tile .who.empty{color:var(--tile-muted,var(--body))}
+.tile small{display:block;color:var(--tile-muted,var(--body));font:13px/20px var(--font-mono);margin-top:6px}
+.tile small.warn,.tile small.bad{color:#9b3f2f;font-weight:500}
 form{display:grid;gap:16px}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 label{display:grid;gap:7px;font-size:15px;color:var(--body-strong);font-weight:500}
