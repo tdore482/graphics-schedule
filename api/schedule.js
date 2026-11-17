@@ -1,133 +1,97 @@
-const crypto = require('crypto');
-const { get, put } = require('@vercel/blob');
+const store = require('../lib/store');
+const http = require('../lib/http');
+const auth = require('../lib/auth');
+const validate = require('../lib/validate');
+const { POSTERS, rosterName } = require('../lib/rotation');
 
-const PATH = 'schedule.json';
-const DEFAULT_PIN = process.env.ADMIN_PIN || '1234';
-const hashPin = pin => crypto.createHash('sha256').update(String(pin)).digest('hex');
-
-function cleanRoster(value) {
-  if (!Array.isArray(value)) return [];
-  const seen = new Set();
-  const out = [];
-  for (const item of value) {
-    const name = String(item || '').trim().slice(0, 80);
-    const key = name.toLowerCase();
-    if (name && !seen.has(key)) { seen.add(key); out.push(name); }
-  }
-  return out.slice(0, 50);
-}
-
-function cleanDone(value) {
-  const out = {};
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
-  for (const [key, val] of Object.entries(value)) {
-    if (typeof key === 'string' && key.length <= 100 && val === true) out[key] = true;
-  }
-  return out;
-}
-
-function normalize(value) {
+function normalizeSchedule(value) {
   const data = value && typeof value === 'object' ? value : {};
+  const roster = Array.isArray(data.roster) ? data.roster : [];
+  const seen = new Set();
+  const cleanRoster = roster.map(entry => {
+    const name = validate.text(rosterName(entry), 80);
+    if (!name) return null;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return null;
+    seen.add(key);
+    if (typeof entry === 'string') return { userId: null, name, legacy: true };
+    return { userId: validate.text(entry.userId, 80) || null, name };
+  }).filter(Boolean).slice(0, 50);
+  const done = {};
+  if (data.done && typeof data.done === 'object' && !Array.isArray(data.done)) {
+    for (const [key, val] of Object.entries(data.done)) {
+      if (typeof key === 'string' && key.length <= 100 && val === true) done[key] = true;
+    }
+  }
+  return { roster: cleanRoster, done, salt: Number.isFinite(data.salt) ? data.salt >>> 0 : 0 };
+}
+
+function publicState(schedule, user) {
   return {
-    roster: cleanRoster(data.roster),
-    done: cleanDone(data.done),
-    salt: Number.isFinite(data.salt) ? data.salt >>> 0 : 0,
-    pinHash: typeof data.pinHash === 'string' && data.pinHash.length === 64 ? data.pinHash : hashPin(DEFAULT_PIN)
+    roster: schedule.roster,
+    done: schedule.done,
+    salt: schedule.salt,
+    user: auth.publicUser(user),
+    canManage: !!user && user.role === 'admin'
   };
-}
-
-function publicState(state) {
-  return { roster: state.roster, done: state.done, salt: state.salt };
-}
-
-async function readState() {
-  const result = await get(PATH, { access: 'private', useCache: false });
-  if (!result || result.statusCode !== 200 || !result.stream) return normalize(null);
-  const text = await new Response(result.stream).text();
-  try { return normalize(JSON.parse(text)); } catch (e) { return normalize(null); }
-}
-
-async function writeState(state) {
-  await put(PATH, JSON.stringify(state), {
-    access: 'private',
-    contentType: 'application/json',
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    cacheControlMaxAge: 0
-  });
-}
-
-async function readBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
-}
-
-function send(res, status, payload) {
-  res.statusCode = status;
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
-  res.end(JSON.stringify(payload));
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  if (req.method === 'GET') {
-    try { return send(res, 200, publicState(await readState())); }
-    catch (e) { return send(res, 500, { error: 'Unable to load schedule' }); }
+  let account, schedule;
+  try {
+    [account, schedule] = await Promise.all([auth.loadAuth(), store.read('schedule')]);
+  } catch (e) {
+    return http.send(res, 500, { error: 'Unable to load schedule.' });
   }
-  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
+  const user = auth.currentUser(req, account);
+  const state = normalizeSchedule(schedule);
+
+  if (req.method === 'GET') return http.send(res, 200, publicState(state, user));
+  if (req.method !== 'POST') return http.send(res, 405, { error: 'Method not allowed.' });
 
   let body;
-  try { body = await readBody(req); }
-  catch (e) { return send(res, 400, { error: 'Invalid request' }); }
+  try { body = await http.readBody(req); }
+  catch (e) { return http.send(res, 400, { error: 'Invalid request.' }); }
 
   try {
-    const state = await readState();
-
     if (body.action === 'done') {
-      const key = typeof body.key === 'string' ? body.key : '';
-      if (!key || key.length > 100) return send(res, 400, { error: 'Invalid item' });
+      if (!user) return http.send(res, 401, { error: 'Please sign in.' });
+      const key = validate.text(body.key, 100);
+      const [date, poster] = key.split('|');
+      if (!validate.weekKey(date) || !POSTERS.includes(poster)) return http.send(res, 400, { error: 'Invalid item.' });
       if (body.value === true) state.done[key] = true;
       else delete state.done[key];
-      await writeState(state);
-      return send(res, 200, publicState(state));
+      await store.write('schedule', state);
+      return http.send(res, 200, publicState(state, user));
     }
 
-    if (body.action === 'verify') {
-      const ok = hashPin(body.pin) === state.pinHash;
-      return send(res, ok ? 200 : 401, ok ? { ok: true } : { error: 'Incorrect PIN' });
+    const admin = auth.requireAdmin(req, res, account);
+    if (!admin) return;
+
+    if (body.action === 'remove-from-roster') {
+      const index = Number(body.index);
+      if (!Number.isInteger(index) || index < 0 || index >= state.roster.length) return http.send(res, 400, { error: 'Invalid designer.' });
+      state.roster.splice(index, 1);
+      await store.write('schedule', state);
+      return http.send(res, 200, publicState(state, admin));
     }
 
-    if (body.action === 'admin') {
-      if (hashPin(body.pin) !== state.pinHash) return send(res, 401, { error: 'Incorrect PIN' });
-      state.roster = cleanRoster(body.roster);
-      state.salt = Number.isFinite(body.salt) ? body.salt >>> 0 : 0;
-      await writeState(state);
-      return send(res, 200, publicState(state));
+    if (body.action === 'shuffle') {
+      state.salt = (state.salt + 1) >>> 0;
+      await store.write('schedule', state);
+      return http.send(res, 200, publicState(state, admin));
     }
 
     if (body.action === 'clear') {
-      if (hashPin(body.pin) !== state.pinHash) return send(res, 401, { error: 'Incorrect PIN' });
       state.done = {};
-      await writeState(state);
-      return send(res, 200, publicState(state));
+      await store.write('schedule', state);
+      return http.send(res, 200, publicState(state, admin));
     }
 
-    if (body.action === 'pin') {
-      if (hashPin(body.current) !== state.pinHash) return send(res, 401, { error: 'Current PIN is incorrect' });
-      const next = typeof body.next === 'string' ? body.next.trim() : '';
-      if (!next) return send(res, 400, { error: 'Enter a new PIN' });
-      state.pinHash = hashPin(next);
-      await writeState(state);
-      return send(res, 200, publicState(state));
-    }
-
-    return send(res, 400, { error: 'Unknown action' });
+    return http.send(res, 400, { error: 'Unknown action.' });
   } catch (e) {
     console.error('schedule update failed:', e && e.message ? e.message : e);
-    return send(res, 500, { error: 'Unable to save schedule' });
+    return http.send(res, 500, { error: 'Unable to save schedule.' });
   }
 };

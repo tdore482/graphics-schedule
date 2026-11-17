@@ -1,361 +1,210 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Graphics Schedule</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
-<style>
-:root{--bg:#f3f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#dde2ec;--p1:#2b59ff;--p2:#c0267f;--p3:#0f8b6d;--ok:#0f7a55;--warn:#a65d00;--bad:#c0262d;--tint:rgba(20,33,61,.04);color-scheme:light;box-sizing:border-box}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e131f;--card:#171e2e;--ink:#eef1f8;--mute:#9ba6bd;--line:#273049;--p1:#7c9bff;--p2:#f070b6;--p3:#3fd1a8;--ok:#4fd49b;--warn:#f0b04d;--bad:#ff7a80;--tint:rgba(255,255,255,.05);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e131f;--card:#171e2e;--ink:#eef1f8;--mute:#9ba6bd;--line:#273049;--p1:#7c9bff;--p2:#f070b6;--p3:#3fd1a8;--ok:#4fd49b;--warn:#f0b04d;--bad:#ff7a80;--tint:rgba(255,255,255,.05);color-scheme:dark}
-*,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:860px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(56px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
-h1{font-size:clamp(1.7rem,5.5vw,2.6rem);line-height:1.15;margin:0 0 8px;font-weight:800;letter-spacing:-.02em}
-.rule{color:var(--mute);margin:0 0 16px}
-.topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:0 0 14px}
-.team{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:inline-flex;gap:8px;align-items:baseline;max-width:100%;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;background:var(--card);padding:5px 12px;font-size:.9rem}
-.chip b{font-weight:600;overflow-wrap:anywhere}
-.chip em{font-style:normal;color:var(--mute);white-space:nowrap}
-.note{color:var(--mute);font-size:.85rem;margin:0 0 12px}
-#adminBtn[aria-expanded="true"]{border-color:var(--p1);background:var(--tint)}
-.admin{border:1px solid var(--p1);border-radius:14px;background:var(--card);padding:16px;margin:0 0 18px}
-.admin h2{font-size:1.15rem;margin:0 0 4px}
-.roster{margin:0 0 14px}
-.addRow{display:flex;flex-wrap:wrap;gap:8px}
-.addRow input{flex:1 1 180px;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
-.addRow input:focus{outline:2px solid var(--p1);outline-offset:1px}
-.rosterList{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.pill{display:inline-flex;gap:6px;align-items:center;max-width:100%;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;padding:4px 6px 4px 12px;background:var(--tint)}
-.pill b{font-weight:600;min-width:0;overflow-wrap:anywhere}
-.pill button{flex:none;padding:6px 12px;border-radius:999px;font-size:.85rem;line-height:1.4}
-.adminActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.pinBox{display:grid;gap:8px;max-width:420px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
-.pinBox h3{font-size:1rem;margin:0}
-.pinBox label{display:grid;gap:4px;font-size:.9rem}
-.pinBox input{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
-.msg{min-height:1.2em;font-size:.85rem;color:var(--warn);margin:0}
-.msg.good{color:var(--ok)}
-.who{display:block;font-size:.9rem;font-style:normal;overflow-wrap:anywhere}
-.who.empty{color:var(--mute)}
-.bar-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-.bar-row h2{font-size:1.3rem;margin:0 8px 0 0;min-width:9ch;font-weight:600}
-button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-height:40px;touch-action:manipulation;cursor:pointer}
-button:hover{border-color:var(--p1)}
-button:focus-visible,.tile:focus-within{outline:2px solid var(--p1);outline-offset:2px}
-.sum{margin:18px 0 0;color:var(--mute)}
-.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:6px}
-.bar i{display:block;height:100%;background:var(--ok);transition:width .25s}
-.week{display:grid;grid-template-columns:130px 1fr;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
-.week.now{border-color:var(--p1);box-shadow:0 0 0 1px var(--p1)}
-.day{display:block;font-size:3rem;font-weight:800;line-height:1}
-.mon{font-weight:600}
-.last{color:var(--mute);font-size:.85rem;margin-top:8px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-content:start}
-.tile{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--tint)}
-.tile.done{background:color-mix(in srgb,var(--c) 14%,transparent)}
-.tile input{flex:none;margin-top:5px;width:20px;height:20px;accent-color:var(--c)}
-.tile b{display:block;font-size:1.05rem}
-.tile small{font-size:.85rem}
-.mute{color:var(--mute)}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
-small.ok,small.warn,small.bad{font-weight:600}
-dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:22px;max-width:min(420px,calc(100vw - 32px));box-shadow:0 18px 50px rgba(0,0,0,.25)}
-dialog::backdrop{background:rgba(8,12,22,.55)}
-dialog h2{margin:0 0 6px;font-size:1.25rem}
-dialog p{margin:0 0 12px;color:var(--mute)}
-dialog label{display:grid;gap:6px;font-size:.9rem;margin-bottom:10px}
-dialog input{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-dialog .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-@media (max-width:560px){
-  .wrap{padding-left:calc(12px + env(safe-area-inset-left,0px));padding-right:calc(12px + env(safe-area-inset-right,0px))}
-  .week{grid-template-columns:1fr;gap:12px;padding:13px}
-  .date{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
-  .last{margin:0;width:100%}
-  .tiles{gap:8px}
-  .tile{padding:12px}
-  .tile input{width:24px;height:24px;margin-top:2px}
-  .admin{padding:13px}
-  .adminActions button{flex:1 1 auto}
-  .pill button{min-height:36px;padding:6px 14px}
-  button{min-height:44px}
-  .bar-row{gap:8px}
-  .bar-row h2{width:100%;min-width:0;margin:0}
-  dialog{padding:18px}
-}
-</style>
+<title>Graphics Scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="wrap">
-  <h1>Graphics schedule</h1>
-  <p class="rule">Each week, every design is due on Thursday. The final day is Friday.</p>
-
-  <div class="topbar">
-    <div>
-      <p class="note" style="margin-bottom:6px">Designer pool — rotates weekly (admin managed) · <span id="sync">loading…</span></p>
-      <div class="team" id="team"></div>
-    </div>
-    <button id="adminBtn" aria-expanded="false" aria-controls="adminPanel">Admin</button>
+<header class="topbar">
+  <a class="brand" href="#schedule"><span class="brand-mark">GS</span><span>Graphics <em>Scheduler</em></span></a>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="nav-link active" type="button" data-view="schedule">Schedule</button>
+    <button class="nav-link" type="button" data-view="submissions">Submissions <span class="badge" id="reviewBadge" hidden>0</span></button>
+    <button class="nav-link" type="button" data-view="events">Events</button>
+    <button class="nav-link" type="button" data-view="admin" id="adminNav" hidden>Admin</button>
+  </nav>
+  <div class="top-actions">
+    <button class="btn icon" type="button" id="themeBtn" aria-label="Toggle light and dark theme">A</button>
+    <span class="sync" id="sync">connecting…</span>
+    <button class="btn ghost" type="button" id="authBtn">Sign in</button>
+    <button class="btn ghost" type="button" id="signOutBtn" hidden>Sign out</button>
   </div>
+</header>
 
-  <section class="admin" id="adminPanel" hidden>
-    <h2>Admin control panel</h2>
-    <p class="note">Add designers to the pool. Each week they are shuffled across the designs so nobody keeps the same design two weeks running.</p>
-    <div class="roster">
-      <form class="addRow" id="addForm">
-        <input type="text" id="newName" placeholder="Designer name" autocomplete="off" aria-label="New designer name" required>
-        <button type="submit">Add name</button>
-      </form>
-      <div class="rosterList" id="rosterList"></div>
-      <p class="msg" id="rosterMsg" role="status" aria-live="polite"></p>
+<main class="shell">
+  <section class="view" id="view-schedule" data-view-panel="schedule">
+    <div class="hero">
+      <p class="eyebrow">Weekly design operations</p>
+      <h1>The work is planned. <em>The review is visible.</em></h1>
+      <p class="lead">Designers get assigned posters each week, submit finished work with a WeTransfer link, and see exactly where it stands. Admins get a live review queue and automatic email reminders.</p>
     </div>
-    <div class="adminActions">
-      <button id="shuffleBtn">Reshuffle rotation</button>
-      <button id="clearBtn">Clear progress</button>
-      <button id="lockBtn">Lock panel</button>
+
+    <div class="grid three">
+      <div class="card stat"><div class="value" id="statDesigners">0</div><div class="label">Designers in rotation</div></div>
+      <div class="card stat"><div class="value" id="statReady">0 / 0</div><div class="label">Posters marked ready this month</div><div class="bar"><i id="progressFill"></i></div></div>
+      <div class="card stat"><div class="value" id="statPending">0</div><div class="label">Posters waiting for review</div></div>
     </div>
-    <form class="pinBox" id="pinChange">
-      <h3>Change admin PIN</h3>
-      <p class="note" style="margin:0">The PIN is checked on the server, never stored in this page.</p>
-      <label>Current PIN <input type="password" id="curPin" autocomplete="off" required></label>
-      <label>New PIN <input type="password" id="newPin" autocomplete="off" required></label>
-      <label>Confirm new PIN <input type="password" id="confirmPin" autocomplete="off" required></label>
-      <button type="submit" style="justify-self:start">Update PIN</button>
-      <p class="msg" id="pinMsg" role="status" aria-live="polite"></p>
-    </form>
+
+    <section class="section">
+      <div class="section-head">
+        <div><p class="eyebrow">Team</p><h2>Designer pool</h2></div>
+        <p>Accounts are created by an admin and rotate weekly across the posters.</p>
+      </div>
+      <ul class="roster" id="team"></ul>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><p class="eyebrow">Rotation</p><h2 id="month">This month</h2></div>
+        <div class="month">
+          <button class="btn" type="button" id="prev">Previous</button>
+          <button class="btn" type="button" id="today">This month</button>
+          <button class="btn" type="button" id="next">Next</button>
+        </div>
+      </div>
+      <p class="hint">Every design is due on Thursday. Friday is the final day. Sign in to mark a poster ready.</p>
+      <div id="weeks"></div>
+    </section>
   </section>
 
-  <div class="bar-row">
-    <h2 id="month"></h2>
-    <button id="prev" aria-label="Previous month">Previous</button>
-    <button id="today">This month</button>
-    <button id="next" aria-label="Next month">Next</button>
-  </div>
-  <p class="sum" id="sum"></p>
-  <div class="bar"><i id="fill"></i></div>
-  <div id="weeks"></div>
-</div>
+  <section class="view" id="view-submissions" data-view-panel="submissions" hidden>
+    <div class="hero">
+      <p class="eyebrow">Handoff</p>
+      <h1>Submit the poster. <em>Keep the link in one place.</em></h1>
+      <p class="lead">Upload your finished work to WeTransfer, paste the link below, and the admin team is notified immediately.</p>
+    </div>
 
-<dialog id="login" aria-labelledby="loginTitle">
+    <div class="grid two">
+      <form class="card" id="submitForm">
+        <div><p class="eyebrow">New submission</p><h3>Send a poster for review</h3></div>
+        <div class="form-grid">
+          <label>Week
+            <select id="submitWeek" required></select>
+          </label>
+          <label>Poster
+            <select id="submitPoster" required></select>
+          </label>
+        </div>
+        <label>WeTransfer link
+          <input type="url" id="submitUrl" placeholder="https://we.tl/t-..." required>
+        </label>
+        <label>Note for reviewers <span class="hint">optional</span>
+          <textarea id="submitNote" maxlength="600" placeholder="Version, changes made, anything to check…"></textarea>
+        </label>
+        <button class="btn primary" type="submit">Submit for review</button>
+        <p class="msg" id="submitMsg" role="status" aria-live="polite"></p>
+      </form>
+
+      <div>
+        <div class="section-head"><div><p class="eyebrow">Your work</p><h3>My submissions</h3></div></div>
+        <ul class="list" id="mySubmissions"></ul>
+      </div>
+    </div>
+
+    <section class="section" id="reviewSection" hidden>
+      <div class="section-head">
+        <div><p class="eyebrow">Admin queue</p><h2>Waiting for review <span class="badge" id="reviewCount">0</span></h2></div>
+      </div>
+      <ul class="list" id="reviewQueue"></ul>
+    </section>
+  </section>
+
+  <section class="view" id="view-events" data-view-panel="events" hidden>
+    <div class="hero">
+      <p class="eyebrow">Calendar</p>
+      <h1>Upcoming events. <em>Nothing left to chase.</em></h1>
+      <p class="lead">Keep deadlines, launches and campaign dates in one shared place.</p>
+    </div>
+    <div class="grid two">
+      <div>
+        <div class="section-head"><div><p class="eyebrow">Schedule</p><h2>Events</h2></div><button class="btn" type="button" id="addEventBtn" hidden>Add event</button></div>
+        <ul class="list" id="eventList"></ul>
+      </div>
+      <form class="card" id="eventForm" hidden>
+        <div><p class="eyebrow">Admin</p><h3 id="eventFormTitle">Add an event</h3></div>
+        <label>Title<input type="text" id="eventTitle" maxlength="140" required></label>
+        <div class="form-grid">
+          <label>Starts<input type="datetime-local" id="eventStart" required></label>
+          <label>Ends <span class="hint">optional</span><input type="datetime-local" id="eventEnd"></label>
+        </div>
+        <label>Location<input type="text" id="eventLocation" maxlength="140"></label>
+        <label>Related link <span class="hint">https only</span><input type="url" id="eventLink"></label>
+        <label>Description<textarea id="eventDescription" maxlength="1200"></textarea></label>
+        <div class="controls">
+          <button class="btn primary" type="submit">Save event</button>
+          <button class="btn" type="button" id="eventCancel">Cancel</button>
+        </div>
+        <p class="msg" id="eventMsg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <section class="view" id="view-admin" data-view-panel="admin" hidden>
+    <div class="hero">
+      <p class="eyebrow">Administration</p>
+      <h1>People, rotation, <em>and access.</em></h1>
+      <p class="lead" id="profile">Loading account…</p>
+    </div>
+
+    <div class="grid two">
+      <form class="card" id="createUserForm">
+        <div><p class="eyebrow">Accounts</p><h3>Add a designer</h3></div>
+        <label>Name<input type="text" id="newName" maxlength="80" autocomplete="off" required></label>
+        <label>Email<input type="email" id="newEmail" maxlength="160" autocomplete="off" required></label>
+        <label>Initial password<input type="password" id="newPassword" minlength="8" autocomplete="new-password" required></label>
+        <label>Role
+          <select id="newRole">
+            <option value="designer">Designer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <button class="btn primary" type="submit">Create account</button>
+        <p class="msg" id="createMsg" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="card">
+        <div><p class="eyebrow">Accounts</p><h3>Existing accounts</h3></div>
+        <div id="userList"></div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="section-head"><div><p class="eyebrow">Rotation</p><h2>Manage the pool</h2></div></div>
+      <div class="card">
+        <div id="rosterManage"></div>
+        <div class="controls" style="margin-top:18px">
+          <button class="btn" type="button" id="shuffleBtn">Reshuffle rotation</button>
+          <button class="btn danger" type="button" id="clearBtn">Clear progress</button>
+        </div>
+        <p class="msg" id="adminMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><div><p class="eyebrow">Security</p><h2>Change your password</h2></div></div>
+      <form class="card" id="passwordForm" style="max-width:520px">
+        <label>Current password<input type="password" id="curPassword" autocomplete="current-password" required></label>
+        <label>New password<input type="password" id="newPassword2" minlength="8" autocomplete="new-password" required></label>
+        <button class="btn primary" type="submit">Update password</button>
+        <p class="msg" id="passwordMsg" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </section>
+</main>
+
+<footer><div class="inner"><span>Graphics Scheduler</span><span>Warm surfaces. Clear handoffs.</span></div></footer>
+
+<dialog id="authDialog" aria-labelledby="authTitle">
   <form id="loginForm">
-    <h2 id="loginTitle">Admin access</h2>
-    <p>Enter the admin PIN to manage the designer pool.</p>
-    <label for="pinInput">Admin PIN</label>
-    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" required>
-    <p class="msg" id="err" role="alert" aria-live="assertive"></p>
-    <div class="dlg-actions">
-      <button type="button" id="cancelBtn">Cancel</button>
-      <button type="submit">Unlock</button>
+    <p class="eyebrow">Account access</p>
+    <h2 id="authTitle">Sign in</h2>
+    <p>Use the credentials created by your admin.</p>
+    <label>Email<input type="email" id="loginEmail" autocomplete="username" required></label>
+    <label>Password<input type="password" id="loginPassword" autocomplete="current-password" required></label>
+    <p class="msg" id="loginMsg" role="alert" aria-live="assertive"></p>
+    <div class="dialog-actions">
+      <button class="btn" type="button" id="loginCancel">Cancel</button>
+      <button class="btn primary" type="submit">Sign in</button>
     </div>
   </form>
 </dialog>
 
-<script>
-const POSTERS=['BT-MGS','BT-GDADM','KMZ'];
-const KEY='graphics-schedule-v1';
-const SESSION='graphics-admin-v1';
-const PIN_KEY='graphics-local-pin-v1';
-const API='/api/schedule';
-const EPOCH=Date.UTC(1970,0,1);
-const cleanRoster=a=>{const seen=new Set(),out=[];a.forEach(x=>{const v=String(x||'').trim().slice(0,80);if(v&&!seen.has(v.toLowerCase())){seen.add(v.toLowerCase());out.push(v);}});return out.slice(0,50);};
-const normalize=o=>{const d=o&&typeof o==='object'?o:{};return{roster:cleanRoster(d.roster),done:d.done&&typeof d.done==='object'&&!Array.isArray(d.done)?d.done:{},salt:Number.isFinite(d.salt)?d.salt>>>0:0};};
-let state={roster:[],done:{},salt:0};
-let remote=false,pin='',snapshot='',isAdmin=false;
-try{pin=sessionStorage.getItem(PIN_KEY)||'';isAdmin=sessionStorage.getItem(SESSION)==='1'&&!!pin;}catch(e){}
-function updateSnapshot(){snapshot=JSON.stringify([state.roster,state.done,state.salt]);}
-function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}updateSnapshot();}
-function loadLocal(){try{const s=localStorage.getItem(KEY);if(s){const o=JSON.parse(s);if(o&&typeof o==='object'){
-  state.done=o.done&&typeof o.done==='object'?o.done:{};
-  state.salt=typeof o.salt==='number'?o.salt:0;
-  state.roster=cleanRoster(Array.isArray(o.roster)?o.roster:(o.names&&typeof o.names==='object'?Object.values(o.names):[]));
-}}}catch(e){}}
-function setState(data){state=normalize(data);updateSnapshot();render();}
-async function api(action,extra){
-  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action},extra||{}))});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(data.error||'Request failed. Please try again.');
-  return data;
-}
-async function pushAdmin(){
-  if(!remote){saveLocal();return true;}
-  try{setState(await api('admin',{pin,roster:state.roster,salt:state.salt}));return true;}
-  catch(e){$('rosterMsg').textContent=e.message||'Could not save';return false;}
-}
-function localPinOk(v){let stored=null;try{stored=localStorage.getItem(PIN_KEY);}catch(e){}if(!stored){try{localStorage.setItem(PIN_KEY,v);}catch(e){}return true;}return stored===v;}
-const $=id=>document.getElementById(id);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const fmt=(d,o)=>d.toLocaleDateString('en-GB',o);
-const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const start=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1);};
-let view=start();
-function hash32(n){n=(n^61)^(n>>>16);n=n+(n<<3);n=n^(n>>>4);n=Math.imul(n,0x27d4eb2d);n=n^(n>>>15);return n>>>0;}
-function weekIndex(d){return Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/604800000);}
-const baseCache=new Map();
-function baseFor(w){
-  const n=state.roster.length;
-  if(!n)return 0;
-  const ck=state.salt+'|'+n+'|'+w;
-  if(baseCache.has(ck))return baseCache.get(ck);
-  const raw=i=>hash32(state.salt^i)%n;
-  let b=raw(0);
-  const dir=w>0?1:-1;
-  for(let i=dir;i!==w+dir;i+=dir){let r=raw(i);if(r===b)r=(r+1)%n;b=r;}
-  baseCache.set(ck,b);
-  return b;
-}
-function assign(thu){
-  const r=state.roster;
-  if(!r.length)return POSTERS.map(()=>null);
-  const b=baseFor(weekIndex(thu));
-  return POSTERS.map((p,i)=>r[(b+i)%r.length]);
-}
-function thursdays(y,m){const r=[],d=new Date(y,m,1);while(d.getDay()!==4)d.setDate(d.getDate()+1);while(d.getMonth()===m){r.push(new Date(d));d.setDate(d.getDate()+7);}return r;}
-function status(done,t,thu,last){
-  if(done)return['Ready','ok'];
-  const n=Math.round((thu-t)/864e5);
-  if(n>0)return['Due in '+n+(n===1?' day':' days'),'mute'];
-  if(n===0)return['Due today','warn'];
-  if(t.getTime()===last.getTime())return['Past Thursday, final day today','warn'];
-  return['Overdue','bad'];
-}
-function renderTeam(){
-  $('team').innerHTML=state.roster.length
-    ? state.roster.map((n,i)=>'<span class="chip" style="--c:var(--p'+(i%3+1)+')"><b>'+esc(n)+'</b><em>Designer '+(i+1)+'</em></span>').join('')
-    : '<p class="note" style="margin:0">No designers added yet — add names in the admin panel.</p>';
-}
-function renderRoster(){
-  $('rosterList').innerHTML=state.roster.length
-    ? state.roster.map((n,i)=>'<span class="pill" style="--c:var(--p'+(i%3+1)+')"><b>'+esc(n)+'</b><button type="button" data-remove="'+i+'" aria-label="Remove '+esc(n)+'">Remove</button></span>').join('')
-    : '<p class="note" style="margin:0">No designers in the pool yet.</p>';
-}
-function render(){
-  renderTeam();renderRoster();
-  $('adminPanel').hidden=!isAdmin;
-  $('adminBtn').textContent=isAdmin?'Lock admin':'Admin';
-  $('adminBtn').setAttribute('aria-expanded',String(isAdmin));
-  const y=view.getFullYear(),m=view.getMonth();
-  $('month').textContent=fmt(view,{month:'long',year:'numeric'});
-  const t=new Date();t.setHours(0,0,0,0);
-  let total=0,done=0,html='';
-  thursdays(y,m).forEach(thu=>{
-    const last=new Date(thu);last.setDate(thu.getDate()+1);
-    const mon=new Date(thu);mon.setDate(thu.getDate()-3);
-    const wkEnd=new Date(thu);wkEnd.setDate(thu.getDate()+3);
-    const now=t>=mon&&t<=wkEnd;
-    const people=assign(thu);
-    html+='<section class="week'+(now?' now':'')+'"><div class="date"><span class="day">'+thu.getDate()+'</span><span class="mon">'+fmt(thu,{weekday:'long',month:'short'})+'</span><div class="last">Latest: '+fmt(last,{weekday:'long',day:'numeric',month:'short'})+'</div></div><div class="tiles">';
-    POSTERS.forEach((p,i)=>{
-      const k=ymd(thu)+'|'+p,d=!!state.done[k];
-      total++;if(d)done++;
-      const s=status(d,t,thu,last),nm=people[i];
-      html+='<label class="tile'+(d?' done':'')+'" style="--c:var(--p'+(i+1)+')"><input type="checkbox" data-k="'+k+'"'+(d?' checked':'')+'><span><b>'+p+'</b><em class="who'+(nm?'':' empty')+'">'+(nm?esc(nm):'Unassigned')+'</em><small class="'+s[1]+'">'+s[0]+'</small></span></label>';
-    });
-    html+='</div></section>';
-  });
-  $('weeks').innerHTML=html;
-  $('sum').textContent=done+' of '+total+' designs ready this month';
-  $('fill').style.width=(total?done/total*100:0)+'%';
-}
-function lock(){isAdmin=false;try{sessionStorage.removeItem(SESSION);}catch(e){}render();}
-
-$('weeks').addEventListener('change',async e=>{
-  const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
-  if(e.target.checked)state.done[k]=true;else delete state.done[k];
-  updateSnapshot();render();
-  if(remote){try{setState(await api('done',{key:k,value:e.target.checked}));}catch(err){}}
-  else saveLocal();
-});
-$('addForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const v=$('newName').value.trim();
-  if(!v)return;
-  if(state.roster.some(x=>x.toLowerCase()===v.toLowerCase())){$('rosterMsg').textContent='That name is already in the pool.';return;}
-  const prev=state.roster.slice();
-  state.roster.push(v);$('newName').value='';$('rosterMsg').textContent='';
-  if(!(await pushAdmin()))state.roster=prev;
-  updateSnapshot();render();$('newName').focus();
-});
-$('rosterList').addEventListener('click',async e=>{
-  const b=e.target.closest('[data-remove]');if(!b)return;
-  const prev=state.roster.slice();
-  state.roster.splice(Number(b.dataset.remove),1);
-  if(!(await pushAdmin()))state.roster=prev;
-  updateSnapshot();render();
-});
-$('shuffleBtn').onclick=async()=>{
-  const prev=state.salt;state.salt=(state.salt+1)>>>0;
-  if(!(await pushAdmin()))state.salt=prev;
-  updateSnapshot();render();
-};
-$('adminBtn').onclick=()=>{
-  if(isAdmin){lock();return;}
-  $('err').textContent='';$('pinInput').value='';
-  $('login').showModal();$('pinInput').focus();
-};
-$('lockBtn').onclick=lock;
-$('cancelBtn').onclick=()=>$('login').close();
-$('loginForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const btn=e.submitter;if(btn)btn.disabled=true;
-  const entered=$('pinInput').value;
-  try{
-    if(remote)await api('verify',{pin:entered});
-    else if(!localPinOk(entered))throw new Error('Incorrect PIN. Try again.');
-    pin=entered;isAdmin=true;
-    try{sessionStorage.setItem(SESSION,'1');sessionStorage.setItem(PIN_KEY,pin);}catch(err){}
-    $('login').close();$('pinInput').value='';$('err').textContent='';
-    $('rosterMsg').textContent='';$('pinMsg').textContent='';$('pinMsg').className='msg';
-    $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
-    render();
-  }catch(err){$('err').textContent=err.message||'Incorrect PIN. Try again.';$('pinInput').select();}
-  finally{if(btn)btn.disabled=false;}
-});
-$('pinChange').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const msg=$('pinMsg');msg.className='msg';
-  const current=$('curPin').value,nw=$('newPin').value;
-  if(!nw){msg.textContent='Enter a new PIN.';return;}
-  if(nw!==$('confirmPin').value){msg.textContent='New PINs do not match.';return;}
-  try{
-    if(remote){await api('pin',{current,next:nw});}
-    else{if(!localPinOk(current))throw new Error('Current PIN is incorrect.');localStorage.setItem(PIN_KEY,nw);}
-    pin=nw;try{sessionStorage.setItem(PIN_KEY,pin);}catch(err){}
-    $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
-    msg.textContent='PIN updated.';msg.className='msg good';
-  }catch(err){msg.textContent=err.message||'Could not update PIN.';}
-});
-$('clearBtn').onclick=async()=>{
-  if(!confirm('Clear all completion marks?'))return;
-  const prev=state.done;state.done={};
-  if(remote){try{setState(await api('clear',{pin}));}catch(err){state.done=prev;updateSnapshot();render();}}
-  else{saveLocal();render();}
-};
-$('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render();};
-$('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render();};
-$('today').onclick=()=>{view=start();render();};
-async function poll(){
-  if(document.hidden)return;
-  try{
-    const r=await fetch(API,{cache:'no-store'});
-    if(!r.ok)return;
-    const next=normalize(await r.json());
-    const sig=JSON.stringify([next.roster,next.done,next.salt]);
-    if(sig!==snapshot){state=next;snapshot=sig;render();}
-  }catch(e){}
-}
-async function init(){
-  try{
-    const r=await fetch(API,{cache:'no-store'});
-    if(!r.ok)throw new Error();
-    remote=true;setState(await r.json());
-    setInterval(poll,5000);
-  }catch(e){remote=false;loadLocal();updateSnapshot();}
-  $('sync').textContent=remote?'synced for everyone':'this browser only';
-  render();
-}
-init();
-</script>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="/app.js"></script>
 </body>
 </html>
