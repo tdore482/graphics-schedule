@@ -9,6 +9,7 @@ A shared graphics workflow app: admins create designer accounts, the weekly post
 - Submissions with a validated WeTransfer link, optional note, and `pending` / `approved` / `needs changes` status.
 - Separate admin console at `/admin` with review, schedule control, people/rotation, events, and account security.
 - Admin-only ready marks; designers see read-only progress and submit work but cannot change poster status.
+- Admin-editable descriptions on individual schedule cards, visible on the main schedule.
 - Admin review queue with a live badge, approval, and reviewer notes.
 - Upcoming events managed by admins.
 - Automated Monday assignment reminders and Wednesday final-day/pending-review emails.
@@ -24,7 +25,13 @@ Existing Vercel Blob storage is used. Add these environment variables in Vercel 
 
 | Variable | Purpose |
 |---|---|
-| `BLOB_READ_WRITE_TOKEN` | Existing Vercel Blob token. |
+| `BLOB_READ_WRITE_TOKEN` | Existing Vercel Blob token; keep during migration. |
+| `FIREBASE_SERVICE_ACCOUNT` | Full Firebase service account JSON, or use the three variables below. |
+| `FIREBASE_PROJECT_ID` | Firebase project ID when using separate service-account variables. |
+| `FIREBASE_CLIENT_EMAIL` | Firebase service account email. |
+| `FIREBASE_PRIVATE_KEY` | Firebase service account private key; escaped newlines are supported. |
+| `FIRESTORE_DATABASE_ID` | Optional Firestore database ID; defaults to `(default)`. |
+| `FIRESTORE_COLLECTION` | Optional Firestore collection; defaults to `app_state`. |
 | `ADMIN_EMAIL` | Email for the first admin account. |
 | `ADMIN_PASSWORD` | Initial password for the first admin account. |
 | `RESEND_API_KEY` | Resend API key for reminder and review emails. |
@@ -54,7 +61,7 @@ Vercel passes `Authorization: Bearer $CRON_SECRET`. The route also accepts `?sec
 
 ## Storage
 
-Data lives in separate private Blob JSON files: `auth.json`, `schedule.json`, `submissions.json`, `events.json`, and `mail-state.json`. All API access goes through `lib/store.js`, so a future move to Supabase/Postgres can replace that adapter without rewriting the UI or route logic.
+Data lives in separate private Blob JSON files: `auth.json`, `schedule.json`, `submissions.json`, `events.json`, and `mail-state.json`. When Firebase service-account env vars are configured, `lib/store.js` switches to Cloud Firestore and automatically copies any missing Blob state into the `app_state` collection on first request. Keep `BLOB_READ_WRITE_TOKEN` until that migration has completed. All API access goes through `lib/store.js`, so storage backends can change without rewriting the UI or route logic.
 
 ## Checks
 

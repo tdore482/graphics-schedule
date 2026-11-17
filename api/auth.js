@@ -30,6 +30,7 @@ module.exports = async function handler(req, res) {
   try {
     data = await auth.ensureSeed();
   } catch (e) {
+    console.error('auth init failed:', e && e.stack ? e.stack : e);
     return http.send(res, 500, { error: 'Unable to load accounts.' });
   }
 
@@ -83,6 +84,29 @@ module.exports = async function handler(req, res) {
       user.passwordHash = hash;
       await auth.saveAuth(data);
       return http.send(res, 200, { ok: true });
+    }
+
+    if (body.action === 'rename-user') {
+      const admin = auth.requireAdmin(req, res, data);
+      if (!admin) return;
+      const mail = validate.email(body.email);
+      const name = validate.text(body.name, 80);
+      if (!mail || !name) return http.send(res, 400, { error: 'A valid email and name are required.' });
+      const user = data.users.find(u => u.email === mail);
+      if (!user) return http.send(res, 404, { error: 'Account not found.' });
+      const previousName = user.name;
+      user.name = name;
+      await auth.saveAuth(data);
+      const schedule = await store.read('schedule');
+      const roster = Array.isArray(schedule.roster) ? schedule.roster : [];
+      schedule.roster = roster.map(entry => {
+        const userId = rosterUserId(entry);
+        if (userId && userId === user.id) return typeof entry === 'string' ? name : Object.assign({}, entry, { name });
+        if (!userId && String(rosterName(entry)).toLowerCase() === previousName.toLowerCase()) return name;
+        return entry;
+      });
+      await store.write('schedule', schedule);
+      return http.send(res, 200, { user: auth.publicUser(user) });
     }
 
     if (body.action === 'create-user') {

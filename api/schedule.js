@@ -4,6 +4,11 @@ const auth = require('../lib/auth');
 const validate = require('../lib/validate');
 const { POSTERS, rosterName } = require('../lib/rotation');
 
+function validItemKey(key) {
+  const [date, poster] = String(key || '').split('|');
+  return !!validate.weekKey(date) && POSTERS.includes(poster);
+}
+
 function normalizeSchedule(value) {
   const data = value && typeof value === 'object' ? value : {};
   const roster = Array.isArray(data.roster) ? data.roster : [];
@@ -23,13 +28,21 @@ function normalizeSchedule(value) {
       if (typeof key === 'string' && key.length <= 100 && val === true) done[key] = true;
     }
   }
-  return { roster: cleanRoster, done, salt: Number.isFinite(data.salt) ? data.salt >>> 0 : 0 };
+  const descriptions = {};
+  if (data.descriptions && typeof data.descriptions === 'object' && !Array.isArray(data.descriptions)) {
+    for (const [key, val] of Object.entries(data.descriptions)) {
+      const note = validate.text(val, 240);
+      if (validItemKey(key) && note) descriptions[key] = note;
+    }
+  }
+  return { roster: cleanRoster, done, descriptions, salt: Number.isFinite(data.salt) ? data.salt >>> 0 : 0 };
 }
 
 function publicState(schedule, user) {
   return {
     roster: schedule.roster,
     done: schedule.done,
+    descriptions: schedule.descriptions,
     salt: schedule.salt,
     user: auth.publicUser(user),
     canManage: !!user && user.role === 'admin'
@@ -59,12 +72,23 @@ module.exports = async function handler(req, res) {
       const editor = auth.requireAdmin(req, res, account);
       if (!editor) return;
       const key = validate.text(body.key, 100);
-      const [date, poster] = key.split('|');
-      if (!validate.weekKey(date) || !POSTERS.includes(poster)) return http.send(res, 400, { error: 'Invalid item.' });
+      if (!validItemKey(key)) return http.send(res, 400, { error: 'Invalid item.' });
       if (body.value === true) state.done[key] = true;
       else delete state.done[key];
       await store.write('schedule', state);
       return http.send(res, 200, publicState(state, editor));
+    }
+
+    if (body.action === 'description') {
+      const admin = auth.requireAdmin(req, res, account);
+      if (!admin) return;
+      const key = validate.text(body.key, 100);
+      if (!validItemKey(key)) return http.send(res, 400, { error: 'Invalid item.' });
+      const note = validate.text(body.value, 240);
+      if (note) state.descriptions[key] = note;
+      else delete state.descriptions[key];
+      await store.write('schedule', state);
+      return http.send(res, 200, publicState(state, admin));
     }
 
     const admin = auth.requireAdmin(req, res, account);

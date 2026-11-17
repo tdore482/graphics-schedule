@@ -3,6 +3,7 @@ const EPOCH = Date.UTC(1970, 0, 1);
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = v => { try { const u = new URL(String(v)); return u.protocol === 'https:' ? u.href : ''; } catch (e) { return ''; } };
+const externalLink = (url, label) => '<a class="external-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '<svg class="external-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"></path><path d="M10 14 21 3"></path><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path></svg></a>';
 const ymd = d => d.toISOString().slice(0, 10);
 const utc = (y, m, d) => new Date(Date.UTC(y, m, d));
 const fmt = (d, o) => d.toLocaleDateString('en-GB', Object.assign({ timeZone: 'UTC' }, o));
@@ -10,7 +11,7 @@ const titles = { overview: 'Overview', review: 'Review queue', schedule: 'Schedu
 const state = {
   me: null,
   users: [],
-  schedule: { roster: [], done: {}, salt: 0 },
+  schedule: { roster: [], done: {}, descriptions: {}, salt: 0 },
   submissions: [],
   events: [],
   panel: 'overview',
@@ -158,7 +159,7 @@ function statusBadge(status) {
 
 function reviewMarkup(s) {
   const url = safeUrl(s.weTransferUrl);
-  const link = url ? '<p><a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Open WeTransfer link ↗</a></p>' : '<p class="meta">No link supplied.</p>';
+  const link = url ? '<p>' + externalLink(url, 'Open WeTransfer link') + '</p>' : '<p class="meta">No link supplied.</p>';
   const note = s.note ? '<p>' + esc(s.note) + '</p>' : '';
   const reviewNote = s.reviewNote ? '<p class="meta">Your note: ' + esc(s.reviewNote) + '</p>' : '';
   const meta = '<p class="meta">' + esc(s.designerName) + ' · ' + esc(s.poster) + ' · week ' + esc(s.weekKey) + '</p>';
@@ -198,7 +199,8 @@ function renderAdminSchedule() {
       const done = !!state.schedule.done[key];
       const s = statusFor(done, today, thu, last);
       const name = people[i].name;
-      return '<label class="tile' + (done ? ' done' : '') + '"><input type="checkbox" data-key="' + esc(key) + '"' + (done ? ' checked' : '') + '><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span></label>';
+      const description = (state.schedule.descriptions || {})[key] || '';
+      return '<div class="tile' + (done ? ' done' : '') + '"><label class="tile-main"><input type="checkbox" data-key="' + esc(key) + '"' + (done ? ' checked' : '') + '><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span></label><textarea class="tile-note-input" data-desc-key="' + esc(key) + '" rows="2" maxlength="240" placeholder="Add description">' + esc(description) + '</textarea></div>';
     }).join('');
     return '<article class="week' + (current ? ' now' : '') + '"><div><div class="day">' + thu.getUTCDate() + '</div><div class="monthday">' + fmt(thu, { weekday: 'long', month: 'short' }) + '</div><div class="latest">Latest: ' + fmt(last, { weekday: 'short', day: 'numeric', month: 'short' }) + '</div></div><div class="tiles">' + tiles + '</div></article>';
   }).join('') || '<div class="empty">No Thursdays in this month.</div>';
@@ -227,7 +229,7 @@ function eventMarkup(e) {
   const startDate = fmt(start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
   const when = startDate + ' · ' + startTime + (end ? ' – ' + fmt(end, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '');
-  const link = safeUrl(e.link) ? '<p><a href="' + esc(safeUrl(e.link)) + '" target="_blank" rel="noopener noreferrer">Event link ↗</a></p>' : '';
+  const link = safeUrl(e.link) ? '<p>' + externalLink(safeUrl(e.link), 'Event link') + '</p>' : '';
   return '<li class="item event-item ' + stateClass + '">' +
     '<time class="event-marker" datetime="' + esc(e.startsAt) + '" aria-label="' + esc(when) + '"><span class="marker-day">' + esc(day) + '</span><span class="marker-month">' + esc(month) + '</span></time>' +
     '<div class="event-body"><div class="item-head"><h4>' + esc(e.title) + '</h4><span class="event-label">' + label + '</span></div>' +
@@ -314,7 +316,21 @@ $('adminNext').addEventListener('click', () => { state.viewMonth = utc(state.vie
 $('adminToday').addEventListener('click', () => { state.viewMonth = utc(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1); renderAdminSchedule(); });
 
 $('adminWeeks').addEventListener('change', async e => {
-  const box = e.target;
+  const target = e.target;
+  if (target.dataset.descKey) {
+    const key = target.dataset.descKey;
+    const value = target.value.trim();
+    const descriptions = state.schedule.descriptions || (state.schedule.descriptions = {});
+    if ((descriptions[key] || '') === value) return;
+    if (value) descriptions[key] = value; else delete descriptions[key];
+    try {
+      const data = await postJson('/api/schedule', 'description', { key, value });
+      state.schedule.descriptions = data.descriptions || {};
+      toast('Description saved.');
+    } catch (err) { toast(err.message); await loadAll(true); }
+    return;
+  }
+  const box = target;
   if (!box.dataset.key) return;
   const key = box.dataset.key;
   const value = box.checked;
