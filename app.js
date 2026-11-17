@@ -100,6 +100,30 @@ function setMsg(id, message, good) {
   el.className = good ? 'msg good' : 'msg';
 }
 
+function updateThemeMeta(theme) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#2b2622' : '#f7f5f0');
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  $('installBtn').hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  $('installBtn').hidden = true;
+});
+$('installBtn').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  $('installBtn').hidden = true;
+  if (choice && choice.outcome === 'accepted') toast('App installed.');
+});
+
 function showView(view) {
   state.view = view;
   document.querySelectorAll('[data-view-panel]').forEach(panel => { panel.hidden = panel.dataset.viewPanel !== view; });
@@ -285,6 +309,7 @@ document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('cl
 $('themeBtn').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
+  updateThemeMeta(next);
   $('themeBtn').textContent = next === 'dark' ? 'L' : 'D';
   $('themeBtn').setAttribute('aria-label', next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
   try { localStorage.setItem('gs-theme', next); } catch (e) {}
@@ -486,11 +511,16 @@ async function init() {
     const saved = localStorage.getItem('gs-theme');
     if (saved === 'light' || saved === 'dark') document.documentElement.dataset.theme = saved;
   } catch (e) {}
-  $('themeBtn').textContent = document.documentElement.dataset.theme === 'dark' ? 'L' : 'D';
-  $('themeBtn').setAttribute('aria-label', document.documentElement.dataset.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  const theme = document.documentElement.dataset.theme;
+  updateThemeMeta(theme);
+  $('themeBtn').textContent = theme === 'dark' ? 'L' : 'D';
+  $('themeBtn').setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
   const initial = location.hash.slice(1);
   showView(['schedule', 'submissions', 'events', 'admin'].includes(initial) ? initial : 'schedule');
   await loadAll();
   setInterval(() => { if (!document.hidden) loadAll(true); }, 5000);
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
 }
 init();

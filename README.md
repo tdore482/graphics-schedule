@@ -12,6 +12,10 @@ A shared graphics workflow app: admins create designer accounts, the weekly post
 - Automated Monday assignment reminders and Wednesday final-day/pending-review emails.
 - Warp-inspired UI: warm dark canvas by default, warm light theme toggle, Inter + DM Mono, tight radii, hairline borders.
 
+## Installable app
+
+The site is a PWA: supported browsers show an **Install** button when `beforeinstallprompt` fires, and the manifest plus service worker make it installable from the browser menu. Static assets are cached for offline shell loads; `/api/*` requests are never cached. Bump `CACHE` in `sw.js` when changing static assets so clients refresh.
+
 ## Setup
 
 Existing Vercel Blob storage is used. Add these environment variables in Vercel (or `.env.local` for `vercel dev`):
