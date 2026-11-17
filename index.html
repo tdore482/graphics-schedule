@@ -6,20 +6,20 @@
 <title>Graphics Schedule</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
 <style>
-:root{--bg:#f3f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#dde2ec;--p1:#2b59ff;--p2:#c0267f;--p3:#0f8b6d;--ok:#0f7a55;--warn:#a65d00;--bad:#c0262d;--tint:rgba(20,33,61,.04);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#f3f5f9;--card:#fff;--ink:#14213d;--mute:#5b6781;--line:#dde2ec;--p1:#2b59ff;--p2:#c0267f;--p3:#0f8b6d;--ok:#0f7a55;--warn:#a65d00;--bad:#c0262d;--tint:rgba(20,33,61,.04);color-scheme:light;box-sizing:border-box}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e131f;--card:#171e2e;--ink:#eef1f8;--mute:#9ba6bd;--line:#273049;--p1:#7c9bff;--p2:#f070b6;--p3:#3fd1a8;--ok:#4fd49b;--warn:#f0b04d;--bad:#ff7a80;--tint:rgba(255,255,255,.05);color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#0e131f;--card:#171e2e;--ink:#eef1f8;--mute:#9ba6bd;--line:#273049;--p1:#7c9bff;--p2:#f070b6;--p3:#3fd1a8;--ok:#4fd49b;--warn:#f0b04d;--bad:#ff7a80;--tint:rgba(255,255,255,.05);color-scheme:dark}
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 12px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:860px;margin:0 auto;padding:22px 16px 56px}
+.wrap{max-width:860px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(56px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
 h1{font-size:clamp(1.7rem,5.5vw,2.6rem);line-height:1.15;margin:0 0 8px;font-weight:800;letter-spacing:-.02em}
 .rule{color:var(--mute);margin:0 0 16px}
 .topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:0 0 14px}
 .team{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:inline-flex;gap:8px;align-items:baseline;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;background:var(--card);padding:5px 12px;font-size:.9rem}
-.chip b{font-weight:600}
-.chip em{font-style:normal;color:var(--mute)}
+.chip{display:inline-flex;gap:8px;align-items:baseline;max-width:100%;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;background:var(--card);padding:5px 12px;font-size:.9rem}
+.chip b{font-weight:600;overflow-wrap:anywhere}
+.chip em{font-style:normal;color:var(--mute);white-space:nowrap}
 .note{color:var(--mute);font-size:.85rem;margin:0 0 12px}
 #adminBtn[aria-expanded="true"]{border-color:var(--p1);background:var(--tint)}
 .admin{border:1px solid var(--p1);border-radius:14px;background:var(--card);padding:16px;margin:0 0 18px}
@@ -29,9 +29,9 @@ h1{font-size:clamp(1.7rem,5.5vw,2.6rem);line-height:1.15;margin:0 0 8px;font-wei
 .addRow input{flex:1 1 180px;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .addRow input:focus{outline:2px solid var(--p1);outline-offset:1px}
 .rosterList{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;padding:4px 6px 4px 12px;background:var(--tint)}
-.pill b{font-weight:600}
-.pill button{padding:2px 8px;border-radius:999px;font-size:.85rem;line-height:1.4}
+.pill{display:inline-flex;gap:6px;align-items:center;max-width:100%;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:999px;padding:4px 6px 4px 12px;background:var(--tint)}
+.pill b{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.pill button{flex:none;padding:6px 12px;border-radius:999px;font-size:.85rem;line-height:1.4}
 .adminActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .pinBox{display:grid;gap:8px;max-width:420px;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
 .pinBox h3{font-size:1rem;margin:0}
@@ -39,11 +39,11 @@ h1{font-size:clamp(1.7rem,5.5vw,2.6rem);line-height:1.15;margin:0 0 8px;font-wei
 .pinBox input{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
 .msg{min-height:1.2em;font-size:.85rem;color:var(--warn);margin:0}
 .msg.good{color:var(--ok)}
-.who{display:block;font-size:.9rem;font-style:normal}
+.who{display:block;font-size:.9rem;font-style:normal;overflow-wrap:anywhere}
 .who.empty{color:var(--mute)}
 .bar-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .bar-row h2{font-size:1.3rem;margin:0 8px 0 0;min-width:9ch;font-weight:600}
-button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 14px;cursor:pointer}
+button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-height:40px;touch-action:manipulation;cursor:pointer}
 button:hover{border-color:var(--p1)}
 button:focus-visible,.tile:focus-within{outline:2px solid var(--p1);outline-offset:2px}
 .sum{margin:18px 0 0;color:var(--mute)}
@@ -57,7 +57,7 @@ button:focus-visible,.tile:focus-within{outline:2px solid var(--p1);outline-offs
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-content:start}
 .tile{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--tint)}
 .tile.done{background:color-mix(in srgb,var(--c) 14%,transparent)}
-.tile input{margin-top:5px;width:18px;height:18px;accent-color:var(--c)}
+.tile input{flex:none;margin-top:5px;width:20px;height:20px;accent-color:var(--c)}
 .tile b{display:block;font-size:1.05rem}
 .tile small{font-size:.85rem}
 .mute{color:var(--mute)}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
@@ -69,7 +69,22 @@ dialog p{margin:0 0 12px;color:var(--mute)}
 dialog label{display:grid;gap:6px;font-size:.9rem;margin-bottom:10px}
 dialog input{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 dialog .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-@media (max-width:560px){.week{grid-template-columns:1fr}.date{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}.last{margin:0;width:100%}}
+@media (max-width:560px){
+  .wrap{padding-left:calc(12px + env(safe-area-inset-left,0px));padding-right:calc(12px + env(safe-area-inset-right,0px))}
+  .week{grid-template-columns:1fr;gap:12px;padding:13px}
+  .date{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+  .last{margin:0;width:100%}
+  .tiles{gap:8px}
+  .tile{padding:12px}
+  .tile input{width:24px;height:24px;margin-top:2px}
+  .admin{padding:13px}
+  .adminActions button{flex:1 1 auto}
+  .pill button{min-height:36px;padding:6px 14px}
+  button{min-height:44px}
+  .bar-row{gap:8px}
+  .bar-row h2{width:100%;min-width:0;margin:0}
+  dialog{padding:18px}
+}
 </style>
 </head>
 <body>
