@@ -56,14 +56,15 @@ module.exports = async function handler(req, res) {
 
   try {
     if (body.action === 'done') {
-      if (!user) return http.send(res, 401, { error: 'Please sign in.' });
+      const editor = auth.requireAdmin(req, res, account);
+      if (!editor) return;
       const key = validate.text(body.key, 100);
       const [date, poster] = key.split('|');
       if (!validate.weekKey(date) || !POSTERS.includes(poster)) return http.send(res, 400, { error: 'Invalid item.' });
       if (body.value === true) state.done[key] = true;
       else delete state.done[key];
       await store.write('schedule', state);
-      return http.send(res, 200, publicState(state, user));
+      return http.send(res, 200, publicState(state, editor));
     }
 
     const admin = auth.requireAdmin(req, res, account);

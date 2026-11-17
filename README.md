@@ -7,6 +7,8 @@ A shared graphics workflow app: admins create designer accounts, the weekly post
 - Email/password accounts with admin and designer roles.
 - Weekly rotation across `BT-MGS`, `BT-GDADM`, and `KMZ`, due Thursday with Friday as the final day.
 - Submissions with a validated WeTransfer link, optional note, and `pending` / `approved` / `needs changes` status.
+- Separate admin console at `/admin` with review, schedule control, people/rotation, events, and account security.
+- Admin-only ready marks; designers see read-only progress and submit work but cannot change poster status.
 - Admin review queue with a live badge, approval, and reviewer notes.
 - Upcoming events managed by admins.
 - Automated Monday assignment reminders and Wednesday final-day/pending-review emails.
@@ -30,7 +32,7 @@ Existing Vercel Blob storage is used. Add these environment variables in Vercel 
 | `APP_URL` | Public app URL used in emails. |
 | `CRON_SECRET` | Secret used by Vercel Cron to protect `/api/cron`. |
 
-On first load, an admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Sign in and change the password from the Admin page.
+On first load, an admin account is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Open `/admin`, sign in, and change the password from the Account panel. Designers use the main site and never see admin controls.
 
 ## Local development
 

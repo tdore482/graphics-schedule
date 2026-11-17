@@ -58,7 +58,7 @@ h4{font-size:18px;font-weight:500;margin:0 0 6px}
 .week .monthday{color:var(--ink);font-size:15px;font-weight:500;margin-top:4px}
 .week .latest{color:var(--body);font:13px/20px var(--font-mono);margin-top:12px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.tile{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--hairline);border-radius:var(--radius-md);padding:16px;cursor:pointer;background:var(--canvas)}
+.tile{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--hairline);border-radius:var(--radius-md);padding:16px;background:var(--canvas)}
 .tile:hover{border-color:var(--ink)}
 .tile.done{background:var(--soft);border-style:dashed}
 .tile input{margin-top:3px;accent-color:var(--ink);width:20px;height:20px;flex:none}

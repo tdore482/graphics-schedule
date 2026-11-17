@@ -1,9 +1,13 @@
-const CACHE = 'graphics-scheduler-v3';
+const CACHE = 'graphics-scheduler-v4';
 const ASSETS = [
   '/',
   '/index.html',
+  '/admin',
+  '/admin.html',
   '/styles.css',
   '/app.js',
+  '/admin.css',
+  '/admin.js',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -30,14 +34,16 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {
+    const isAdmin = url.pathname === '/admin' || url.pathname === '/admin.html';
+    const fallback = isAdmin ? '/admin.html' : '/index.html';
     event.respondWith(
       fetch(request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE).then(cache => cache.put('/index.html', copy));
+          caches.open(CACHE).then(cache => cache.put(fallback, copy));
           return response;
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(fallback))
     );
     return;
   }

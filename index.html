@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Graphics Scheduler</title>
-<meta name="description" content="Weekly poster rotation, submissions, reviews, and events for the graphics team.">
-<meta name="theme-color" content="#2b2622">
+<meta name="description" content="Weekly poster rotation, submissions, and events for the graphics team.">
+<meta name="theme-color" content="#26221f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Graphics">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,12 +19,11 @@
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="#schedule"><span class="brand-mark">GS</span><span>Graphics <em>Scheduler</em></span></a>
+  <a class="brand" href="#schedule"><span>Graphics <em>Scheduler</em></span></a>
   <nav class="nav" aria-label="Main navigation">
     <button class="nav-link active" type="button" data-view="schedule">Schedule</button>
-    <button class="nav-link" type="button" data-view="submissions">Submissions <span class="badge" id="reviewBadge" hidden>0</span></button>
+    <button class="nav-link" type="button" data-view="submissions">My submissions</button>
     <button class="nav-link" type="button" data-view="events">Events</button>
-    <button class="nav-link" type="button" data-view="admin" id="adminNav" hidden>Admin</button>
   </nav>
   <div class="top-actions">
     <button class="btn icon" type="button" id="themeBtn" aria-label="Toggle light and dark theme">A</button>
@@ -39,20 +38,20 @@
   <section class="view" id="view-schedule" data-view-panel="schedule">
     <div class="hero">
       <p class="eyebrow">Weekly design operations</p>
-      <h1>The work is planned. <em>The review is visible.</em></h1>
-      <p class="lead">Designers get assigned posters each week, submit finished work with a WeTransfer link, and see exactly where it stands. Admins get a live review queue and automatic email reminders.</p>
+      <h1>The work is planned. <em>The handoff is clear.</em></h1>
+      <p class="lead">See your assigned posters each week, submit finished work with a WeTransfer link, and track what the admin team has approved.</p>
     </div>
 
     <div class="grid three">
       <div class="card stat"><div class="value" id="statDesigners">0</div><div class="label">Designers in rotation</div></div>
       <div class="card stat"><div class="value" id="statReady">0 / 0</div><div class="label">Posters marked ready this month</div><div class="bar"><i id="progressFill"></i></div></div>
-      <div class="card stat"><div class="value" id="statPending">0</div><div class="label">Posters waiting for review</div></div>
+      <div class="card stat"><div class="value" id="statMine">0</div><div class="label">My submissions</div></div>
     </div>
 
     <section class="section">
       <div class="section-head">
         <div><p class="eyebrow">Team</p><h2>Designer pool</h2></div>
-        <p>Accounts are created by an admin and rotate weekly across the posters.</p>
+        <p>The team rotates weekly across the posters.</p>
       </div>
       <ul class="roster" id="team"></ul>
     </section>
@@ -66,7 +65,7 @@
           <button class="btn" type="button" id="next">Next</button>
         </div>
       </div>
-      <p class="hint">Every design is due on Thursday. Friday is the final day. Sign in to mark a poster ready.</p>
+      <p class="hint">Every design is due on Thursday. Friday is the final day. The admin team marks posters ready after review.</p>
       <div id="weeks"></div>
     </section>
   </section>
@@ -75,7 +74,7 @@
     <div class="hero">
       <p class="eyebrow">Handoff</p>
       <h1>Submit the poster. <em>Keep the link in one place.</em></h1>
-      <p class="lead">Upload your finished work to WeTransfer, paste the link below, and the admin team is notified immediately.</p>
+      <p class="lead">Upload your finished work to WeTransfer, paste the link below, and the team is notified immediately.</p>
     </div>
 
     <div class="grid two">
@@ -104,95 +103,20 @@
         <ul class="list" id="mySubmissions"></ul>
       </div>
     </div>
-
-    <section class="section" id="reviewSection" hidden>
-      <div class="section-head">
-        <div><p class="eyebrow">Admin queue</p><h2>Waiting for review <span class="badge" id="reviewCount">0</span></h2></div>
-      </div>
-      <ul class="list" id="reviewQueue"></ul>
-    </section>
   </section>
 
   <section class="view" id="view-events" data-view-panel="events" hidden>
     <div class="hero">
       <p class="eyebrow">Calendar</p>
       <h1>Upcoming events. <em>Nothing left to chase.</em></h1>
-      <p class="lead">Keep deadlines, launches and campaign dates in one shared place.</p>
+      <p class="lead">Deadlines, launches and campaign dates in one shared place.</p>
     </div>
-    <div class="grid two">
+    <div class="grid">
       <div>
-        <div class="section-head"><div><p class="eyebrow">Schedule</p><h2>Events</h2></div><button class="btn" type="button" id="addEventBtn" hidden>Add event</button></div>
+        <div class="section-head"><div><p class="eyebrow">Schedule</p><h2>Events</h2></div></div>
         <ul class="list" id="eventList"></ul>
       </div>
-      <form class="card" id="eventForm" hidden>
-        <div><p class="eyebrow">Admin</p><h3 id="eventFormTitle">Add an event</h3></div>
-        <label>Title<input type="text" id="eventTitle" maxlength="140" required></label>
-        <div class="form-grid">
-          <label>Starts<input type="datetime-local" id="eventStart" required></label>
-          <label>Ends <span class="hint">optional</span><input type="datetime-local" id="eventEnd"></label>
-        </div>
-        <label>Location<input type="text" id="eventLocation" maxlength="140"></label>
-        <label>Related link <span class="hint">https only</span><input type="url" id="eventLink"></label>
-        <label>Description<textarea id="eventDescription" maxlength="1200"></textarea></label>
-        <div class="controls">
-          <button class="btn primary" type="submit">Save event</button>
-          <button class="btn" type="button" id="eventCancel">Cancel</button>
-        </div>
-        <p class="msg" id="eventMsg" role="status" aria-live="polite"></p>
-      </form>
     </div>
-  </section>
-
-  <section class="view" id="view-admin" data-view-panel="admin" hidden>
-    <div class="hero">
-      <p class="eyebrow">Administration</p>
-      <h1>People, rotation, <em>and access.</em></h1>
-      <p class="lead" id="profile">Loading account…</p>
-    </div>
-
-    <div class="grid two">
-      <form class="card" id="createUserForm">
-        <div><p class="eyebrow">Accounts</p><h3>Add a designer</h3></div>
-        <label>Name<input type="text" id="newName" maxlength="80" autocomplete="off" required></label>
-        <label>Email<input type="email" id="newEmail" maxlength="160" autocomplete="off" required></label>
-        <label>Initial password<input type="password" id="newPassword" minlength="8" autocomplete="new-password" required></label>
-        <label>Role
-          <select id="newRole">
-            <option value="designer">Designer</option>
-            <option value="admin">Admin</option>
-          </select>
-        </label>
-        <button class="btn primary" type="submit">Create account</button>
-        <p class="msg" id="createMsg" role="status" aria-live="polite"></p>
-      </form>
-
-      <div class="card">
-        <div><p class="eyebrow">Accounts</p><h3>Existing accounts</h3></div>
-        <div id="userList"></div>
-      </div>
-    </div>
-
-    <section class="section">
-      <div class="section-head"><div><p class="eyebrow">Rotation</p><h2>Manage the pool</h2></div></div>
-      <div class="card">
-        <div id="rosterManage"></div>
-        <div class="controls" style="margin-top:18px">
-          <button class="btn" type="button" id="shuffleBtn">Reshuffle rotation</button>
-          <button class="btn danger" type="button" id="clearBtn">Clear progress</button>
-        </div>
-        <p class="msg" id="adminMsg" role="status" aria-live="polite"></p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><div><p class="eyebrow">Security</p><h2>Change your password</h2></div></div>
-      <form class="card" id="passwordForm" style="max-width:520px">
-        <label>Current password<input type="password" id="curPassword" autocomplete="current-password" required></label>
-        <label>New password<input type="password" id="newPassword2" minlength="8" autocomplete="new-password" required></label>
-        <button class="btn primary" type="submit">Update password</button>
-        <p class="msg" id="passwordMsg" role="status" aria-live="polite"></p>
-      </form>
-    </section>
   </section>
 </main>
 
@@ -202,7 +126,7 @@
   <form id="loginForm">
     <p class="eyebrow">Account access</p>
     <h2 id="authTitle">Sign in</h2>
-    <p>Use the credentials created by your admin.</p>
+    <p>Use the credentials created for you by the admin team.</p>
     <label>Email<input type="email" id="loginEmail" autocomplete="username" required></label>
     <label>Password<input type="password" id="loginPassword" autocomplete="current-password" required></label>
     <p class="msg" id="loginMsg" role="alert" aria-live="assertive"></p>

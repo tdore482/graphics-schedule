@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "check": "node --check app.js && node --check sw.js && node --check api/auth.js && node --check api/cron.js && node --check api/events.js && node --check api/schedule.js && node --check api/submissions.js && node --check lib/auth.js && node --check lib/email.js && node --check lib/http.js && node --check lib/rotation.js && node --check lib/store.js && node --check lib/validate.js"
+    "check": "node --check app.js && node --check admin.js && node --check sw.js && node --check api/auth.js && node --check api/cron.js && node --check api/events.js && node --check api/schedule.js && node --check api/submissions.js && node --check lib/auth.js && node --check lib/email.js && node --check lib/http.js && node --check lib/rotation.js && node --check lib/store.js && node --check lib/validate.js"
   },
   "dependencies": {
     "@vercel/blob": "2.9.0"
