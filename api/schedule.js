@@ -41,7 +41,7 @@ function publicState(state) {
 }
 
 async function readState() {
-  const result = await get(PATH, { access: 'private' });
+  const result = await get(PATH, { access: 'private', useCache: false });
   if (!result || result.statusCode !== 200 || !result.stream) return normalize(null);
   const text = await new Response(result.stream).text();
   try { return normalize(JSON.parse(text)); } catch (e) { return normalize(null); }
@@ -52,6 +52,7 @@ async function writeState(state) {
     access: 'private',
     contentType: 'application/json',
     addRandomSuffix: false,
+    allowOverwrite: true,
     cacheControlMaxAge: 0
   });
 }
@@ -126,6 +127,7 @@ module.exports = async function handler(req, res) {
 
     return send(res, 400, { error: 'Unknown action' });
   } catch (e) {
+    console.error('schedule update failed:', e && e.message ? e.message : e);
     return send(res, 500, { error: 'Unable to save schedule' });
   }
 };
