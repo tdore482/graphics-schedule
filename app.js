@@ -102,7 +102,7 @@ function setMsg(id, message, good) {
 
 function updateThemeMeta(theme) {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', theme === 'dark' ? '#26221f' : '#f7f5f0');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#0a0a0a' : '#ffffff');
 }
 
 let deferredInstallPrompt = null;
@@ -166,7 +166,7 @@ function renderSchedule() {
       const s = statusFor(isDone, today, thu, last);
       const name = people[i].name;
       const description = (state.schedule.descriptions || {})[key] || '';
-      return '<div class="tile' + (isDone ? ' done' : '') + '"><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span>' + (description ? '<p class="tile-note">' + esc(description) + '</p>' : '') + '</div>';
+      return '<div class="tile' + (isDone ? ' done' : '') + '"><span><b>' + poster + '</b><em class="who' + (name ? '' : ' empty') + '">' + (name ? esc(name) : 'Unassigned') + '</em><small class="' + s[1] + '">' + s[0] + '</small></span>' + (description ? '<p class="tile-note" title="' + esc(description) + '">' + esc(description) + '</p>' : '') + '</div>';
     }).join('');
     return '<article class="week' + (current ? ' now' : '') + '"><div><div class="day">' + thu.getUTCDate() + '</div><div class="monthday">' + fmt(thu, { weekday: 'long', month: 'short' }) + '</div><div class="latest">Latest: ' + fmt(last, { weekday: 'short', day: 'numeric', month: 'short' }) + '</div></div><div class="tiles">' + tiles + '</div></article>';
   }).join('') || '<div class="empty">No Thursdays in this month.</div>';
@@ -199,8 +199,8 @@ function populateWeekSelect() {
 function submissionMarkup(s) {
   const url = safeUrl(s.weTransferUrl);
   const link = url ? '<p>' + externalLink(url, 'Open WeTransfer link') + '</p>' : '';
-  const note = s.note ? '<p>' + esc(s.note) + '</p>' : '';
-  const reviewNote = s.reviewNote ? '<p class="meta">Reviewer note: ' + esc(s.reviewNote) + '</p>' : '';
+  const note = s.note ? '<p class="description" title="' + esc(s.note) + '">' + esc(s.note) + '</p>' : '';
+  const reviewNote = s.reviewNote ? '<p class="meta description" title="' + esc(s.reviewNote) + '">Reviewer note: ' + esc(s.reviewNote) + '</p>' : '';
   const meta = '<p class="meta">' + esc(s.poster) + ' · week ' + esc(s.weekKey) + '</p>';
   const status = '<span class="status ' + esc(s.status) + '">' + esc(s.status === 'changes' ? 'needs changes' : s.status) + '</span>';
   const actions = s.status !== 'approved'
@@ -245,7 +245,7 @@ function renderEvents() {
         '<div class="event-body"><div class="item-head"><h4>' + esc(e.title) + '</h4><span class="event-label">' + label + '</span></div>' +
         '<p class="event-when">' + esc(when) + '</p>' +
         (e.location ? '<p class="meta">' + esc(e.location) + '</p>' : '') +
-        (e.description ? '<p>' + esc(e.description) + '</p>' : '') + link + '</div></li>';
+        (e.description ? '<p class="description" title="' + esc(e.description) + '">' + esc(e.description) + '</p>' : '') + link + '</div></li>';
     }).join('')
     : '<li class="empty">No upcoming events yet.</li>';
 }

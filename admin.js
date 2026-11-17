@@ -104,7 +104,7 @@ function setMsg(id, message, good) {
 
 function updateThemeMeta(theme) {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', theme === 'dark' ? '#26221f' : '#f7f5f0');
+  if (meta) meta.setAttribute('content', theme === 'dark' ? '#0a0a0a' : '#ffffff');
 }
 
 function isAdmin() {
@@ -160,8 +160,8 @@ function statusBadge(status) {
 function reviewMarkup(s) {
   const url = safeUrl(s.weTransferUrl);
   const link = url ? '<p>' + externalLink(url, 'Open WeTransfer link') + '</p>' : '<p class="meta">No link supplied.</p>';
-  const note = s.note ? '<p>' + esc(s.note) + '</p>' : '';
-  const reviewNote = s.reviewNote ? '<p class="meta">Your note: ' + esc(s.reviewNote) + '</p>' : '';
+  const note = s.note ? '<p class="description" title="' + esc(s.note) + '">' + esc(s.note) + '</p>' : '';
+  const reviewNote = s.reviewNote ? '<p class="meta description" title="' + esc(s.reviewNote) + '">Your note: ' + esc(s.reviewNote) + '</p>' : '';
   const meta = '<p class="meta">' + esc(s.designerName) + ' · ' + esc(s.poster) + ' · week ' + esc(s.weekKey) + '</p>';
   const actions = s.status === 'pending'
     ? '<div class="item-actions"><label>Review note<input type="text" class="review-note" maxlength="600" placeholder="Optional note for the designer"></label><button class="btn primary" type="button" data-review="approved" data-id="' + esc(s.id) + '">Approve</button><button class="btn" type="button" data-review="changes" data-id="' + esc(s.id) + '">Request changes</button></div>'
@@ -235,7 +235,7 @@ function eventMarkup(e) {
     '<div class="event-body"><div class="item-head"><h4>' + esc(e.title) + '</h4><span class="event-label">' + label + '</span></div>' +
     '<p class="event-when">' + esc(when) + '</p>' +
     (e.location ? '<p class="meta">' + esc(e.location) + '</p>' : '') +
-    (e.description ? '<p>' + esc(e.description) + '</p>' : '') + link +
+    (e.description ? '<p class="description" title="' + esc(e.description) + '">' + esc(e.description) + '</p>' : '') + link +
     '<div class="item-actions"><button class="btn" type="button" data-edit="' + esc(e.id) + '">Edit</button><button class="btn danger" type="button" data-delete="' + esc(e.id) + '">Delete</button></div></div></li>';
 }
 
