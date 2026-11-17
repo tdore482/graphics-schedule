@@ -94,7 +94,7 @@ dialog .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14p
 
   <div class="topbar">
     <div>
-      <p class="note" style="margin-bottom:6px">Designer pool — rotates weekly (admin managed)</p>
+      <p class="note" style="margin-bottom:6px">Designer pool — rotates weekly (admin managed) · <span id="sync">loading…</span></p>
       <div class="team" id="team"></div>
     </div>
     <button id="adminBtn" aria-expanded="false" aria-controls="adminPanel">Admin</button>
@@ -118,7 +118,7 @@ dialog .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14p
     </div>
     <form class="pinBox" id="pinChange">
       <h3>Change admin PIN</h3>
-      <p class="note" style="margin:0">Default PIN is <b>1234</b>. Change it after signing in.</p>
+      <p class="note" style="margin:0">The PIN is checked on the server, never stored in this page.</p>
       <label>Current PIN <input type="password" id="curPin" autocomplete="off" required></label>
       <label>New PIN <input type="password" id="newPin" autocomplete="off" required></label>
       <label>Confirm new PIN <input type="password" id="confirmPin" autocomplete="off" required></label>
@@ -156,19 +156,34 @@ dialog .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14p
 const POSTERS=['BT-MGS','BT-GDADM','KMZ'];
 const KEY='graphics-schedule-v1';
 const SESSION='graphics-admin-v1';
-const DEFAULT_PIN='1234';
+const PIN_KEY='graphics-local-pin-v1';
+const API='/api/schedule';
 const EPOCH=Date.UTC(1970,0,1);
-const cleanRoster=a=>{const seen=new Set(),out=[];a.forEach(x=>{const v=String(x||'').trim();if(v&&!seen.has(v.toLowerCase())){seen.add(v.toLowerCase());out.push(v);}});return out;};
-let state={roster:[],done:{},pin:DEFAULT_PIN,salt:0};
-try{const s=localStorage.getItem(KEY);if(s){const o=JSON.parse(s);if(o&&typeof o==='object'){
+const cleanRoster=a=>{const seen=new Set(),out=[];a.forEach(x=>{const v=String(x||'').trim().slice(0,80);if(v&&!seen.has(v.toLowerCase())){seen.add(v.toLowerCase());out.push(v);}});return out.slice(0,50);};
+const normalize=o=>{const d=o&&typeof o==='object'?o:{};return{roster:cleanRoster(d.roster),done:d.done&&typeof d.done==='object'&&!Array.isArray(d.done)?d.done:{},salt:Number.isFinite(d.salt)?d.salt>>>0:0};};
+let state={roster:[],done:{},salt:0};
+let remote=false,pin='',snapshot='',isAdmin=false;
+try{pin=sessionStorage.getItem(PIN_KEY)||'';isAdmin=sessionStorage.getItem(SESSION)==='1'&&!!pin;}catch(e){}
+function updateSnapshot(){snapshot=JSON.stringify([state.roster,state.done,state.salt]);}
+function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}updateSnapshot();}
+function loadLocal(){try{const s=localStorage.getItem(KEY);if(s){const o=JSON.parse(s);if(o&&typeof o==='object'){
   state.done=o.done&&typeof o.done==='object'?o.done:{};
-  state.pin=typeof o.pin==='string'&&o.pin?o.pin:DEFAULT_PIN;
   state.salt=typeof o.salt==='number'?o.salt:0;
   state.roster=cleanRoster(Array.isArray(o.roster)?o.roster:(o.names&&typeof o.names==='object'?Object.values(o.names):[]));
-}}}catch(e){}
-let isAdmin=false;
-try{isAdmin=sessionStorage.getItem(SESSION)==='1';}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+}}}catch(e){}}
+function setState(data){state=normalize(data);updateSnapshot();render();}
+async function api(action,extra){
+  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action},extra||{}))});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||'Request failed. Please try again.');
+  return data;
+}
+async function pushAdmin(){
+  if(!remote){saveLocal();return true;}
+  try{setState(await api('admin',{pin,roster:state.roster,salt:state.salt}));return true;}
+  catch(e){$('rosterMsg').textContent=e.message||'Could not save';return false;}
+}
+function localPinOk(v){let stored=null;try{stored=localStorage.getItem(PIN_KEY);}catch(e){}if(!stored){try{localStorage.setItem(PIN_KEY,v);}catch(e){}return true;}return stored===v;}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt=(d,o)=>d.toLocaleDateString('en-GB',o);
@@ -245,21 +260,35 @@ function render(){
 }
 function lock(){isAdmin=false;try{sessionStorage.removeItem(SESSION);}catch(e){}render();}
 
-$('weeks').addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k)return;if(e.target.checked)state.done[k]=true;else delete state.done[k];save();render();});
-$('addForm').addEventListener('submit',e=>{
+$('weeks').addEventListener('change',async e=>{
+  const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
+  if(e.target.checked)state.done[k]=true;else delete state.done[k];
+  updateSnapshot();render();
+  if(remote){try{setState(await api('done',{key:k,value:e.target.checked}));}catch(err){}}
+  else saveLocal();
+});
+$('addForm').addEventListener('submit',async e=>{
   e.preventDefault();
   const v=$('newName').value.trim();
   if(!v)return;
   if(state.roster.some(x=>x.toLowerCase()===v.toLowerCase())){$('rosterMsg').textContent='That name is already in the pool.';return;}
+  const prev=state.roster.slice();
   state.roster.push(v);$('newName').value='';$('rosterMsg').textContent='';
-  save();render();$('newName').focus();
+  if(!(await pushAdmin()))state.roster=prev;
+  updateSnapshot();render();$('newName').focus();
 });
-$('rosterList').addEventListener('click',e=>{
+$('rosterList').addEventListener('click',async e=>{
   const b=e.target.closest('[data-remove]');if(!b)return;
+  const prev=state.roster.slice();
   state.roster.splice(Number(b.dataset.remove),1);
-  save();render();
+  if(!(await pushAdmin()))state.roster=prev;
+  updateSnapshot();render();
 });
-$('shuffleBtn').onclick=()=>{state.salt=(state.salt+1)>>>0;save();render();};
+$('shuffleBtn').onclick=async()=>{
+  const prev=state.salt;state.salt=(state.salt+1)>>>0;
+  if(!(await pushAdmin()))state.salt=prev;
+  updateSnapshot();render();
+};
 $('adminBtn').onclick=()=>{
   if(isAdmin){lock();return;}
   $('err').textContent='';$('pinInput').value='';
@@ -267,32 +296,66 @@ $('adminBtn').onclick=()=>{
 };
 $('lockBtn').onclick=lock;
 $('cancelBtn').onclick=()=>$('login').close();
-$('loginForm').addEventListener('submit',e=>{
+$('loginForm').addEventListener('submit',async e=>{
   e.preventDefault();
-  if($('pinInput').value!==state.pin){$('err').textContent='Incorrect PIN. Try again.';$('pinInput').select();return;}
-  isAdmin=true;try{sessionStorage.setItem(SESSION,'1');}catch(e){}
-  $('login').close();$('pinInput').value='';$('err').textContent='';
-  $('rosterMsg').textContent='';
-  $('pinMsg').textContent='';$('pinMsg').className='msg';
-  $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
-  render();
+  const btn=e.submitter;if(btn)btn.disabled=true;
+  const entered=$('pinInput').value;
+  try{
+    if(remote)await api('verify',{pin:entered});
+    else if(!localPinOk(entered))throw new Error('Incorrect PIN. Try again.');
+    pin=entered;isAdmin=true;
+    try{sessionStorage.setItem(SESSION,'1');sessionStorage.setItem(PIN_KEY,pin);}catch(err){}
+    $('login').close();$('pinInput').value='';$('err').textContent='';
+    $('rosterMsg').textContent='';$('pinMsg').textContent='';$('pinMsg').className='msg';
+    $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
+    render();
+  }catch(err){$('err').textContent=err.message||'Incorrect PIN. Try again.';$('pinInput').select();}
+  finally{if(btn)btn.disabled=false;}
 });
-$('pinChange').addEventListener('submit',e=>{
+$('pinChange').addEventListener('submit',async e=>{
   e.preventDefault();
   const msg=$('pinMsg');msg.className='msg';
-  if($('curPin').value!==state.pin){msg.textContent='Current PIN is incorrect.';return;}
-  const nw=$('newPin').value;
+  const current=$('curPin').value,nw=$('newPin').value;
   if(!nw){msg.textContent='Enter a new PIN.';return;}
   if(nw!==$('confirmPin').value){msg.textContent='New PINs do not match.';return;}
-  state.pin=nw;save();
-  $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
-  msg.textContent='PIN updated.';msg.className='msg good';
+  try{
+    if(remote){await api('pin',{current,next:nw});}
+    else{if(!localPinOk(current))throw new Error('Current PIN is incorrect.');localStorage.setItem(PIN_KEY,nw);}
+    pin=nw;try{sessionStorage.setItem(PIN_KEY,pin);}catch(err){}
+    $('curPin').value='';$('newPin').value='';$('confirmPin').value='';
+    msg.textContent='PIN updated.';msg.className='msg good';
+  }catch(err){msg.textContent=err.message||'Could not update PIN.';}
 });
-$('clearBtn').onclick=()=>{if(!confirm('Clear all completion marks?'))return;state.done={};save();render();};
+$('clearBtn').onclick=async()=>{
+  if(!confirm('Clear all completion marks?'))return;
+  const prev=state.done;state.done={};
+  if(remote){try{setState(await api('clear',{pin}));}catch(err){state.done=prev;updateSnapshot();render();}}
+  else{saveLocal();render();}
+};
 $('prev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render();};
 $('next').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render();};
 $('today').onclick=()=>{view=start();render();};
-render();
+async function poll(){
+  if(document.hidden)return;
+  try{
+    const r=await fetch(API,{cache:'no-store'});
+    if(!r.ok)return;
+    const next=normalize(await r.json());
+    const sig=JSON.stringify([next.roster,next.done,next.salt]);
+    if(sig!==snapshot){state=next;snapshot=sig;render();}
+  }catch(e){}
+}
+async function init(){
+  try{
+    const r=await fetch(API,{cache:'no-store'});
+    if(!r.ok)throw new Error();
+    remote=true;setState(await r.json());
+    setInterval(poll,5000);
+  }catch(e){remote=false;loadLocal();updateSnapshot();}
+  $('sync').textContent=remote?'synced for everyone':'this browser only';
+  render();
+}
+init();
 </script>
 </body>
 </html>
