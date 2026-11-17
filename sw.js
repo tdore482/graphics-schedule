@@ -1,4 +1,4 @@
-const CACHE = 'graphics-scheduler-v2';
+const CACHE = 'graphics-scheduler-v3';
 const ASSETS = [
   '/',
   '/index.html',

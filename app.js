@@ -251,15 +251,36 @@ function renderSubmissions() {
 
 function renderEvents() {
   const now = Date.now();
-  $('eventList').innerHTML = state.events.length
-    ? state.events.map(e => {
-      const past = new Date(e.endsAt || e.startsAt).getTime() < now;
-      const date = e.startsAt ? fmt(new Date(e.startsAt), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const todayKey = ymd(new Date());
+  const sorted = state.events.slice().sort((a, b) => {
+    const aPast = new Date(a.endsAt || a.startsAt).getTime() < now;
+    const bPast = new Date(b.endsAt || b.startsAt).getTime() < now;
+    if (aPast !== bPast) return aPast ? 1 : -1;
+    return new Date(a.startsAt) - new Date(b.startsAt);
+  });
+  $('eventList').innerHTML = sorted.length
+    ? sorted.map(e => {
+      const start = new Date(e.startsAt);
+      const end = e.endsAt ? new Date(e.endsAt) : null;
+      const past = (end || start).getTime() < now;
+      const isToday = ymd(start) === todayKey;
+      const stateClass = isToday ? 'today' : past ? 'past' : 'upcoming';
+      const label = isToday ? 'Today' : past ? 'Past' : 'Upcoming';
+      const day = fmt(start, { day: '2-digit' });
+      const month = fmt(start, { month: 'short' }).replace('.', '').toUpperCase();
+      const startDate = fmt(start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const startTime = start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+      const when = startDate + ' · ' + startTime + (end ? ' – ' + fmt(end, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '');
       const link = safeUrl(e.link) ? '<p><a href="' + esc(safeUrl(e.link)) + '" target="_blank" rel="noopener noreferrer">Event link ↗</a></p>' : '';
       const actions = state.me && state.me.role === 'admin'
         ? '<div class="item-actions"><button class="btn" type="button" data-edit="' + esc(e.id) + '">Edit</button><button class="btn danger" type="button" data-delete="' + esc(e.id) + '">Delete</button></div>'
         : '';
-      return '<li class="item"' + (past ? ' style="opacity:.6"' : '') + '><div class="item-head"><h4>' + esc(e.title) + '</h4><span class="event-date">' + esc(date) + (past ? ' · PAST' : '') + '</span></div>' + (e.location ? '<p class="meta">' + esc(e.location) + '</p>' : '') + (e.description ? '<p>' + esc(e.description) + '</p>' : '') + link + actions + '</li>';
+      return '<li class="item event-item ' + stateClass + '">' +
+        '<time class="event-marker" datetime="' + esc(e.startsAt) + '" aria-label="' + esc(when) + '"><span class="marker-day">' + esc(day) + '</span><span class="marker-month">' + esc(month) + '</span></time>' +
+        '<div class="event-body"><div class="item-head"><h4>' + esc(e.title) + '</h4><span class="event-label">' + label + '</span></div>' +
+        '<p class="event-when">' + esc(when) + '</p>' +
+        (e.location ? '<p class="meta">' + esc(e.location) + '</p>' : '') +
+        (e.description ? '<p>' + esc(e.description) + '</p>' : '') + link + actions + '</div></li>';
     }).join('')
     : '<li class="empty">No upcoming events yet.</li>';
 }
